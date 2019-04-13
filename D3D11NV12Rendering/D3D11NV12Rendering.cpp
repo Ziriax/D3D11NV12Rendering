@@ -7,18 +7,12 @@
 #define MAX_LOADSTRING 100
 char buf[1024];
 
-struct NV12Frame
-{
-	UINT width;
-	UINT height;
-	UINT pitch;
-	BYTE *Y;
-	BYTE *UV;
-};
-
 //
 // Globals
 //
+
+NV12Frame *Nv12Frame = nullptr;
+
 OUTPUTMANAGER OutMgr;
 
 // Global Variables:
@@ -59,7 +53,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_D3D11NV12RENDERING));
 
-	RECT DeskBounds;
 	bool FirstTime = true;
 	bool Occluded = true;
 
@@ -84,12 +77,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 		else if (FirstTime)
 		{
+			Nv12Frame = ReadNV12FromFile();
 
 			// First time through the loop so nothing to clean up
 			FirstTime = false;
 
 			// Re-initialize
-			Ret = OutMgr.InitOutput(hWnd, &DeskBounds);
+			Ret = OutMgr.InitOutput(hWnd, Nv12Frame->width, Nv12Frame->height);
+
+			WriteNV12ToTexture(Nv12Frame);
 
 			// We start off in occluded state and we should immediate get a occlusion status window message
 			Occluded = true;
@@ -99,12 +95,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			// Nothing else to do, so try to present to write out to window if not occluded
 			if (!Occluded)
 			{
-				NV12Frame *nv12Frame = ReadNV12FromFile();
-				WriteNV12ToTexture(nv12Frame);
-				free(nv12Frame->Y);
-				free(nv12Frame->UV);
-				free(nv12Frame);
-
 				Ret = OutMgr.UpdateApplicationWindow(&Occluded);
 			}
 		}
@@ -233,6 +223,7 @@ NV12Frame* ReadNV12FromFile()
 
 	FILE *file = nullptr;
 	sprintf_s(buf, "content\\16.nv12");
+	//sprintf_s(buf, "C:\\temp\\frame.nv21");
 	fopen_s(&file, buf, "rb");
 
 	int size = sizeof(NV12Frame);

@@ -13,6 +13,16 @@
 #include "CommonTypes.h"
 #include "warning.h"
 
+struct NV12Frame
+{
+	UINT width;
+	UINT height;
+	UINT pitch;
+	BYTE *Y;
+	BYTE *UV;
+};
+
+
 //
 // Handles the task of drawing into a window.
 // Has the functionality to draw the mouse given a mouse shape buffer and position
@@ -21,9 +31,8 @@ class OUTPUTMANAGER
 {
     public:
         OUTPUTMANAGER();
-		OUTPUTMANAGER(int width, int height);
         ~OUTPUTMANAGER();
-        DUPL_RETURN InitOutput(HWND Window, _Out_ RECT* DeskBounds);
+        DUPL_RETURN InitOutput(HWND Window, int width, int height);
 		DUPL_RETURN CreateAccessibleSurf(RECT * DeskBounds, DXGI_FORMAT Format);
         DUPL_RETURN UpdateApplicationWindow(_Inout_ bool* Occluded);
         void CleanRefs();
@@ -48,7 +57,7 @@ class OUTPUTMANAGER
         DUPL_RETURN MakeRTV();
         void SetViewPort(UINT Width, UINT Height);
         DUPL_RETURN InitShaders();
-        DUPL_RETURN CreateSharedSurf(_Out_ RECT* DeskBounds);
+        DUPL_RETURN CreateSharedSurf();
         DUPL_RETURN DrawFrame();
         DUPL_RETURN ResizeSwapChain();
 

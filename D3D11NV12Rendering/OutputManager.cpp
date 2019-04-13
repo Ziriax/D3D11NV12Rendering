@@ -48,29 +48,24 @@ HRESULT EnumOutputsExpectedErrors[] = {
 //
 // Constructor NULLs out all pointers & sets appropriate var vals
 //
-OUTPUTMANAGER::OUTPUTMANAGER() : m_SwapChain(nullptr),
-                                 m_Device(nullptr),
-                                 m_Factory(nullptr),
-                                 m_DeviceContext(nullptr),
-                                 m_RTV(nullptr),
-                                 m_SamplerLinear(nullptr),
-                                 m_BlendState(nullptr),
-                                 m_VertexShader(nullptr),
-                                 m_PixelShader(nullptr),
-                                 m_InputLayout(nullptr),
-                                 m_SharedSurf(nullptr),
-                                 m_WindowHandle(nullptr),
-                                 m_NeedsResize(false),
-                                 m_OcclusionCookie(0),
-								 m_width(0),
-								 m_height(0)
+OUTPUTMANAGER::OUTPUTMANAGER()
+	: m_SwapChain(nullptr),
+	m_Device(nullptr),
+	m_Factory(nullptr),
+	m_DeviceContext(nullptr),
+	m_RTV(nullptr),
+	m_SamplerLinear(nullptr),
+	m_BlendState(nullptr),
+	m_VertexShader(nullptr),
+	m_PixelShader(nullptr),
+	m_InputLayout(nullptr),
+	m_SharedSurf(nullptr),
+	m_WindowHandle(nullptr),
+	m_NeedsResize(false),
+	m_OcclusionCookie(0),
+	m_width(0),
+	m_height(0)
 {
-}
-
-OUTPUTMANAGER::OUTPUTMANAGER(int width, int height)
-{
-	m_width = width;
-	m_height = height;
 }
 
 //
@@ -78,7 +73,7 @@ OUTPUTMANAGER::OUTPUTMANAGER(int width, int height)
 //
 OUTPUTMANAGER::~OUTPUTMANAGER()
 {
-    CleanRefs();
+	CleanRefs();
 }
 
 //
@@ -86,171 +81,171 @@ OUTPUTMANAGER::~OUTPUTMANAGER()
 //
 void OUTPUTMANAGER::WindowResize()
 {
-    m_NeedsResize = true;
+	m_NeedsResize = true;
 }
 
 //
 // Initialize all state
 //
-DUPL_RETURN OUTPUTMANAGER::InitOutput(HWND Window, _Out_ RECT* DeskBounds)
+DUPL_RETURN OUTPUTMANAGER::InitOutput(HWND Window, int width, int height)
 {
-    HRESULT hr;
+	HRESULT hr;
 
-    // Store window handle
-    m_WindowHandle = Window;
+	// Store window handle
+	m_WindowHandle = Window;
+	m_width = width;
+	m_height = height;
 
-    // Driver types supported
-    D3D_DRIVER_TYPE DriverTypes[] =
-    {
-        D3D_DRIVER_TYPE_HARDWARE,
-        D3D_DRIVER_TYPE_WARP,
-        D3D_DRIVER_TYPE_REFERENCE,
-    };
-    UINT NumDriverTypes = ARRAYSIZE(DriverTypes);
+	// Driver types supported
+	D3D_DRIVER_TYPE DriverTypes[] =
+	{
+		D3D_DRIVER_TYPE_HARDWARE,
+		D3D_DRIVER_TYPE_WARP,
+		D3D_DRIVER_TYPE_REFERENCE,
+	};
+	UINT NumDriverTypes = ARRAYSIZE(DriverTypes);
 
-    // Feature levels supported
-    D3D_FEATURE_LEVEL FeatureLevels[] =
-    {
-        D3D_FEATURE_LEVEL_11_0,
-        D3D_FEATURE_LEVEL_10_1,
-        D3D_FEATURE_LEVEL_10_0,
-        D3D_FEATURE_LEVEL_9_1
-    };
-    UINT NumFeatureLevels = ARRAYSIZE(FeatureLevels);
-    D3D_FEATURE_LEVEL FeatureLevel;
+	// Feature levels supported
+	D3D_FEATURE_LEVEL FeatureLevels[] =
+	{
+		D3D_FEATURE_LEVEL_11_0,
+		D3D_FEATURE_LEVEL_10_1,
+		D3D_FEATURE_LEVEL_10_0,
+		D3D_FEATURE_LEVEL_9_1
+	};
+	UINT NumFeatureLevels = ARRAYSIZE(FeatureLevels);
+	D3D_FEATURE_LEVEL FeatureLevel;
 	// This flag adds support for surfaces with a different color channel ordering
 	// than the default. It is required for compatibility with Direct2D.
-	UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+	UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG;
 
-    // Create device
-    for (UINT DriverTypeIndex = 0; DriverTypeIndex < NumDriverTypes; ++DriverTypeIndex)
-    {
-        hr = D3D11CreateDevice(nullptr, DriverTypes[DriverTypeIndex], nullptr, creationFlags, FeatureLevels, NumFeatureLevels,
-        D3D11_SDK_VERSION, &m_Device, &FeatureLevel, &m_DeviceContext);
-        if (SUCCEEDED(hr))
-        {
-            // Device creation succeeded, no need to loop anymore
-            break;
-        }
-    }
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Device creation in OUTPUTMANAGER failed", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	// Create device
+	for (UINT DriverTypeIndex = 0; DriverTypeIndex < NumDriverTypes; ++DriverTypeIndex)
+	{
+		hr = D3D11CreateDevice(nullptr, DriverTypes[DriverTypeIndex], nullptr, creationFlags, FeatureLevels, NumFeatureLevels,
+			D3D11_SDK_VERSION, &m_Device, &FeatureLevel, &m_DeviceContext);
+		if (SUCCEEDED(hr))
+		{
+			// Device creation succeeded, no need to loop anymore
+			break;
+		}
+	}
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Device creation in OUTPUTMANAGER failed", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-    // Get DXGI factory
-    IDXGIDevice* DxgiDevice = nullptr;
-    hr = m_Device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&DxgiDevice));
-    if (FAILED(hr))
-    {
-        return ProcessFailure(nullptr, L"Failed to QI for DXGI Device", L"Error", hr, nullptr);
-    }
+	// Get DXGI factory
+	IDXGIDevice* DxgiDevice = nullptr;
+	hr = m_Device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&DxgiDevice));
+	if (FAILED(hr))
+	{
+		return ProcessFailure(nullptr, L"Failed to QI for DXGI Device", L"Error", hr, nullptr);
+	}
 
-    IDXGIAdapter* DxgiAdapter = nullptr;
-    hr = DxgiDevice->GetParent(__uuidof(IDXGIAdapter), reinterpret_cast<void**>(&DxgiAdapter));
-    DxgiDevice->Release();
-    DxgiDevice = nullptr;
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to get parent DXGI Adapter", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	IDXGIAdapter* DxgiAdapter = nullptr;
+	hr = DxgiDevice->GetParent(__uuidof(IDXGIAdapter), reinterpret_cast<void**>(&DxgiAdapter));
+	DxgiDevice->Release();
+	DxgiDevice = nullptr;
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to get parent DXGI Adapter", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-    hr = DxgiAdapter->GetParent(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(&m_Factory));
-    DxgiAdapter->Release();
-    DxgiAdapter = nullptr;
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to get parent DXGI Factory", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	hr = DxgiAdapter->GetParent(__uuidof(IDXGIFactory2), reinterpret_cast<void**>(&m_Factory));
+	DxgiAdapter->Release();
+	DxgiAdapter = nullptr;
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to get parent DXGI Factory", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-	
-    // Register for occlusion status windows message
-    hr = m_Factory->RegisterOcclusionStatusWindow(Window, OCCLUSION_STATUS_MSG, &m_OcclusionCookie);
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to register for occlusion message", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
 
-    // Get window size
-    RECT WindowRect;
-    GetClientRect(m_WindowHandle, &WindowRect);
-    UINT Width = WindowRect.right - WindowRect.left;
-    UINT Height = WindowRect.bottom - WindowRect.top;
+	// Register for occlusion status windows message
+	hr = m_Factory->RegisterOcclusionStatusWindow(Window, OCCLUSION_STATUS_MSG, &m_OcclusionCookie);
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to register for occlusion message", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-	
+	// Get window size
+	RECT WindowRect;
+	GetClientRect(m_WindowHandle, &WindowRect);
+	UINT Width = WindowRect.right - WindowRect.left;
+	UINT Height = WindowRect.bottom - WindowRect.top;
 
-    // Create swapchain for window
-    DXGI_SWAP_CHAIN_DESC1 SwapChainDesc;
-    RtlZeroMemory(&SwapChainDesc, sizeof(SwapChainDesc));
+	// Create swapchain for window
+	DXGI_SWAP_CHAIN_DESC1 SwapChainDesc;
+	RtlZeroMemory(&SwapChainDesc, sizeof(SwapChainDesc));
 
-    SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-    SwapChainDesc.BufferCount = 2;
-    SwapChainDesc.Width = Width;
-    SwapChainDesc.Height = Height;
-    SwapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-    SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    SwapChainDesc.SampleDesc.Count = 1;
-    SwapChainDesc.SampleDesc.Quality = 0;
-    hr = m_Factory->CreateSwapChainForHwnd(m_Device, Window, &SwapChainDesc, nullptr, nullptr, &m_SwapChain);
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to create window swapchain", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	SwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+	SwapChainDesc.BufferCount = 2;
+	SwapChainDesc.Width = Width;
+	SwapChainDesc.Height = Height;
+	SwapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	SwapChainDesc.SampleDesc.Count = 1;
+	SwapChainDesc.SampleDesc.Quality = 0;
+	hr = m_Factory->CreateSwapChainForHwnd(m_Device, Window, &SwapChainDesc, nullptr, nullptr, &m_SwapChain);
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to create window swapchain", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-    // Disable the ALT-ENTER shortcut for entering full-screen mode
-    hr = m_Factory->MakeWindowAssociation(Window, DXGI_MWA_NO_ALT_ENTER);
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to make window association", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	// Disable the ALT-ENTER shortcut for entering full-screen mode
+	hr = m_Factory->MakeWindowAssociation(Window, DXGI_MWA_NO_ALT_ENTER);
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to make window association", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-    // Create shared texture
-    DUPL_RETURN Return = CreateSharedSurf(DeskBounds);
-    if (Return != DUPL_RETURN_SUCCESS)
-    {
-        return Return;
-    }
+	// Create shared texture
+	DUPL_RETURN Return = CreateSharedSurf();
+	if (Return != DUPL_RETURN_SUCCESS)
+	{
+		return Return;
+	}
 
-    // Make new render target view
-    Return = MakeRTV();
-    if (Return != DUPL_RETURN_SUCCESS)
-    {
-        return Return;
-    }
+	// Make new render target view
+	Return = MakeRTV();
+	if (Return != DUPL_RETURN_SUCCESS)
+	{
+		return Return;
+	}
 
-    // Set view port
-    SetViewPort(Width, Height);
+	// Set view port
+	SetViewPort(Width, Height);
 
 	D3D11_SAMPLER_DESC desc = CD3D11_SAMPLER_DESC(CD3D11_DEFAULT());
 
-	
+
 	hr = m_Device->CreateSamplerState(
-			&desc,
-			&m_SamplerLinear
+		&desc,
+		&m_SamplerLinear
 	);
 	if (FAILED(hr))
 	{
 		return ProcessFailure(m_Device, L"Failed to create sampler state in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
 	}
-    
 
-    // Initialize shaders
-    Return = InitShaders();
-    if (Return != DUPL_RETURN_SUCCESS)
-    {
-        return Return;
-    }
 
-    GetWindowRect(m_WindowHandle, &WindowRect);
-    MoveWindow(m_WindowHandle, WindowRect.left, WindowRect.top, (DeskBounds->right - DeskBounds->left) / 2, (DeskBounds->bottom - DeskBounds->top) / 2, TRUE);
+	// Initialize shaders
+	Return = InitShaders();
+	if (Return != DUPL_RETURN_SUCCESS)
+	{
+		return Return;
+	}
 
-    return Return;
+	GetWindowRect(m_WindowHandle, &WindowRect);
+	MoveWindow(m_WindowHandle, WindowRect.left, WindowRect.top, m_width, m_height, TRUE);
+
+	return Return;
 }
 
 DUPL_RETURN OUTPUTMANAGER::CreateAccessibleSurf(_In_ RECT* DeskBounds, _In_ DXGI_FORMAT Format)
 {
 	D3D11_TEXTURE2D_DESC desc;
-	
+
 	desc.Width = DeskBounds->right - DeskBounds->left;
 	desc.Height = DeskBounds->bottom - DeskBounds->top;
 	desc.Format = Format;
@@ -282,9 +277,9 @@ DUPL_RETURN OUTPUTMANAGER::CreateAccessibleSurf(_In_ RECT* DeskBounds, _In_ DXGI
 //
 // Recreate shared texture
 //
-DUPL_RETURN OUTPUTMANAGER::CreateSharedSurf(_Out_ RECT* DeskBounds)
+DUPL_RETURN OUTPUTMANAGER::CreateSharedSurf()
 {
-    HRESULT hr;
+	HRESULT hr;
 
 	// Get DXGI resources
 	IDXGIDevice* DxgiDevice = nullptr;
@@ -302,43 +297,6 @@ DUPL_RETURN OUTPUTMANAGER::CreateSharedSurf(_Out_ RECT* DeskBounds)
 	{
 		return ProcessFailure(m_Device, L"Failed to get parent DXGI Adapter", L"Error", hr, SystemTransitionsExpectedErrors);
 	}
-
-	// Set initial values so that we always catch the right coordinates
-	DeskBounds->left = INT_MAX;
-	DeskBounds->right = INT_MIN;
-	DeskBounds->top = INT_MAX;
-	DeskBounds->bottom = INT_MIN;
-
-	IDXGIOutput* DxgiOutput = nullptr;
-
-	// Figure out right dimensions for full size desktop texture and # of outputs to duplicate
-	UINT OutputCount;
-
-	hr = S_OK;
-	for (OutputCount = 0; SUCCEEDED(hr); ++OutputCount)
-	{
-		if (DxgiOutput)
-		{
-			DxgiOutput->Release();
-			DxgiOutput = nullptr;
-		}
-		hr = DxgiAdapter->EnumOutputs(OutputCount, &DxgiOutput);
-		if (DxgiOutput && (hr != DXGI_ERROR_NOT_FOUND))
-		{
-			DXGI_OUTPUT_DESC DesktopDesc;
-			DxgiOutput->GetDesc(&DesktopDesc);
-
-			DeskBounds->left = min(DesktopDesc.DesktopCoordinates.left, DeskBounds->left);
-			DeskBounds->top = min(DesktopDesc.DesktopCoordinates.top, DeskBounds->top);
-			DeskBounds->right = max(DesktopDesc.DesktopCoordinates.right, DeskBounds->right);
-			DeskBounds->bottom = max(DesktopDesc.DesktopCoordinates.bottom, DeskBounds->bottom);
-		}
-	}
-
-	--OutputCount;
-
-	m_width = DeskBounds->right - DeskBounds->left;
-	m_height = DeskBounds->bottom - DeskBounds->top;
 
 	DxgiAdapter->Release();
 	DxgiAdapter = nullptr;
@@ -406,7 +364,7 @@ DUPL_RETURN OUTPUTMANAGER::CreateSharedSurf(_Out_ RECT* DeskBounds)
 		return ProcessFailure(m_Device, L"Failed to create shader resource view", L"Error", hr, SystemTransitionsExpectedErrors);
 	}
 
-    return DUPL_RETURN_SUCCESS;
+	return DUPL_RETURN_SUCCESS;
 }
 
 //
@@ -414,31 +372,31 @@ DUPL_RETURN OUTPUTMANAGER::CreateSharedSurf(_Out_ RECT* DeskBounds)
 //
 DUPL_RETURN OUTPUTMANAGER::UpdateApplicationWindow(_Inout_ bool* Occluded)
 {
-    // In a typical desktop duplication application there would be an application running on one system collecting the desktop images
-    // and another application running on a different system that receives the desktop images via a network and display the image. This
-    // sample contains both these aspects into a single application.
-    // This routine is the part of the sample that displays the desktop image onto the display
+	// In a typical desktop duplication application there would be an application running on one system collecting the desktop images
+	// and another application running on a different system that receives the desktop images via a network and display the image. This
+	// sample contains both these aspects into a single application.
+	// This routine is the part of the sample that displays the desktop image onto the display
 
 	HRESULT hr;
-    //draw
-    DUPL_RETURN Ret = DrawFrame();
-    
-    // Present to window if all worked
-    if (Ret == DUPL_RETURN_SUCCESS)
-    {
-        // Present to window
-        hr = m_SwapChain->Present(1, 0);
-        if (FAILED(hr))
-        {
-            return ProcessFailure(m_Device, L"Failed to present", L"Error", hr, SystemTransitionsExpectedErrors);
-        }
-        else if (hr == DXGI_STATUS_OCCLUDED)
-        {
-            *Occluded = true;
-        }
-    }
+	//draw
+	DUPL_RETURN Ret = DrawFrame();
 
-    return Ret;
+	// Present to window if all worked
+	if (Ret == DUPL_RETURN_SUCCESS)
+	{
+		// Present to window
+		hr = m_SwapChain->Present(1, 0);
+		if (FAILED(hr))
+		{
+			return ProcessFailure(m_Device, L"Failed to present", L"Error", hr, SystemTransitionsExpectedErrors);
+		}
+		else if (hr == DXGI_STATUS_OCCLUDED)
+		{
+			*Occluded = true;
+		}
+	}
+
+	return Ret;
 }
 
 //
@@ -446,20 +404,20 @@ DUPL_RETURN OUTPUTMANAGER::UpdateApplicationWindow(_Inout_ bool* Occluded)
 //
 HANDLE OUTPUTMANAGER::GetSharedHandle()
 {
-    HANDLE Hnd = nullptr;
+	HANDLE Hnd = nullptr;
 
-    // QI IDXGIResource interface to synchronized shared surface.
-    IDXGIResource* DXGIResource = nullptr;
-    HRESULT hr = m_SharedSurf->QueryInterface(__uuidof(IDXGIResource), reinterpret_cast<void**>(&DXGIResource));
-    if (SUCCEEDED(hr))
-    {
-        // Obtain handle to IDXGIResource object.
-        DXGIResource->GetSharedHandle(&Hnd);
-        DXGIResource->Release();
-        DXGIResource = nullptr;
-    }
+	// QI IDXGIResource interface to synchronized shared surface.
+	IDXGIResource* DXGIResource = nullptr;
+	HRESULT hr = m_SharedSurf->QueryInterface(__uuidof(IDXGIResource), reinterpret_cast<void**>(&DXGIResource));
+	if (SUCCEEDED(hr))
+	{
+		// Obtain handle to IDXGIResource object.
+		DXGIResource->GetSharedHandle(&Hnd);
+		DXGIResource->Release();
+		DXGIResource = nullptr;
+	}
 
-    return Hnd;
+	return Hnd;
 }
 
 //
@@ -467,31 +425,31 @@ HANDLE OUTPUTMANAGER::GetSharedHandle()
 //
 DUPL_RETURN OUTPUTMANAGER::DrawFrame()
 {
-    HRESULT hr;
+	HRESULT hr;
 
-    // If window was resized, resize swapchain
-    if (m_NeedsResize)
-    {
-        DUPL_RETURN Ret = ResizeSwapChain();
-        if (Ret != DUPL_RETURN_SUCCESS)
-        {
-            return Ret;
-        }
-        m_NeedsResize = false;
-    }
+	// If window was resized, resize swapchain
+	if (m_NeedsResize)
+	{
+		DUPL_RETURN Ret = ResizeSwapChain();
+		if (Ret != DUPL_RETURN_SUCCESS)
+		{
+			return Ret;
+		}
+		m_NeedsResize = false;
+	}
 
-    // Vertices for drawing whole texture
-    VERTEX Vertices[NUMVERTICES] =
-    {
-        {XMFLOAT3(-1.0f, -1.0f, 0), XMFLOAT2(0.0f, 1.0f)},
-        {XMFLOAT3(-1.0f, 1.0f, 0), XMFLOAT2(0.0f, 0.0f)},
-        {XMFLOAT3(1.0f, -1.0f, 0), XMFLOAT2(1.0f, 1.0f)},
-        {XMFLOAT3(1.0f, -1.0f, 0), XMFLOAT2(1.0f, 1.0f)},
-        {XMFLOAT3(-1.0f, 1.0f, 0), XMFLOAT2(0.0f, 0.0f)},
-        {XMFLOAT3(1.0f, 1.0f, 0), XMFLOAT2(1.0f, 0.0f)},
-    };
+	// Vertices for drawing whole texture
+	VERTEX Vertices[NUMVERTICES] =
+	{
+		{XMFLOAT3(-1.0f, -1.0f, 0), XMFLOAT2(0.0f, 1.0f)},
+		{XMFLOAT3(-1.0f, 1.0f, 0), XMFLOAT2(0.0f, 0.0f)},
+		{XMFLOAT3(1.0f, -1.0f, 0), XMFLOAT2(1.0f, 1.0f)},
+		{XMFLOAT3(1.0f, -1.0f, 0), XMFLOAT2(1.0f, 1.0f)},
+		{XMFLOAT3(-1.0f, 1.0f, 0), XMFLOAT2(0.0f, 0.0f)},
+		{XMFLOAT3(1.0f, 1.0f, 0), XMFLOAT2(1.0f, 0.0f)},
+	};
 
-	
+
 
 	// Rendering NV12 requires two resource views, which represent the luminance and chrominance channels of the YUV formatted texture.
 	std::array<ID3D11ShaderResourceView*, 2> const textureViews = {
@@ -506,48 +464,51 @@ DUPL_RETURN OUTPUTMANAGER::DrawFrame()
 		textureViews.data()
 	);
 
-    // Set resources
-    UINT Stride = sizeof(VERTEX);
-    UINT Offset = 0;
-    FLOAT blendFactor[4] = {0.f, 0.f, 0.f, 0.f};
-    m_DeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
-    m_DeviceContext->OMSetRenderTargets(1, &m_RTV, nullptr);
-    m_DeviceContext->VSSetShader(m_VertexShader, nullptr, 0);
-    m_DeviceContext->PSSetShader(m_PixelShader, nullptr, 0);
-    //m_DeviceContext->PSSetShaderResources(0, 1, &ShaderResource);
-    m_DeviceContext->PSSetSamplers(0, 1, &m_SamplerLinear);
-    m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// Set resources
+	UINT Stride = sizeof(VERTEX);
+	UINT Offset = 0;
+	FLOAT blendFactor[4] = { 0.f, 0.f, 0.f, 0.f };
+	m_DeviceContext->OMSetBlendState(nullptr, blendFactor, 0xffffffff);
+	m_DeviceContext->OMSetRenderTargets(1, &m_RTV, nullptr);
+	m_DeviceContext->VSSetShader(m_VertexShader, nullptr, 0);
+	m_DeviceContext->PSSetShader(m_PixelShader, nullptr, 0);
+	//m_DeviceContext->PSSetShaderResources(0, 1, &ShaderResource);
+	m_DeviceContext->PSSetSamplers(0, 1, &m_SamplerLinear);
+	m_DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    D3D11_BUFFER_DESC BufferDesc;
-    RtlZeroMemory(&BufferDesc, sizeof(BufferDesc));
-    BufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    BufferDesc.ByteWidth = sizeof(VERTEX) * NUMVERTICES;
-    BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    BufferDesc.CPUAccessFlags = 0;
-    D3D11_SUBRESOURCE_DATA InitData;
-    RtlZeroMemory(&InitData, sizeof(InitData));
-    InitData.pSysMem = Vertices;
+	D3D11_BUFFER_DESC BufferDesc;
+	RtlZeroMemory(&BufferDesc, sizeof(BufferDesc));
+	BufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	BufferDesc.ByteWidth = sizeof(VERTEX) * NUMVERTICES;
+	BufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	BufferDesc.CPUAccessFlags = 0;
+	D3D11_SUBRESOURCE_DATA InitData;
+	RtlZeroMemory(&InitData, sizeof(InitData));
+	InitData.pSysMem = Vertices;
 
-    ID3D11Buffer* VertexBuffer = nullptr;
+	ID3D11Buffer* VertexBuffer = nullptr;
 
-    // Create vertex buffer
-    hr = m_Device->CreateBuffer(&BufferDesc, &InitData, &VertexBuffer);
-    if (FAILED(hr))
-    {
-       
-        return ProcessFailure(m_Device, L"Failed to create vertex buffer when drawing a frame", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	// Create vertex buffer
+	hr = m_Device->CreateBuffer(&BufferDesc, &InitData, &VertexBuffer);
+	if (FAILED(hr))
+	{
 
-    m_DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+		return ProcessFailure(m_Device, L"Failed to create vertex buffer when drawing a frame", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-    // Draw textured quad onto render target
-    m_DeviceContext->Draw(NUMVERTICES, 0);
+	m_DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 
-    VertexBuffer->Release();
-    VertexBuffer = nullptr;
+	float clearColor[4] = { 0.5, 0.7, 0.9, 1.0 };
+	m_DeviceContext->ClearRenderTargetView(m_RTV, clearColor);
+
+	// Draw textured quad onto render target
+	m_DeviceContext->Draw(NUMVERTICES, 0);
+
+	VertexBuffer->Release();
+	VertexBuffer = nullptr;
 
 
-    return DUPL_RETURN_SUCCESS;
+	return DUPL_RETURN_SUCCESS;
 }
 
 //
@@ -555,44 +516,44 @@ DUPL_RETURN OUTPUTMANAGER::DrawFrame()
 //
 DUPL_RETURN OUTPUTMANAGER::InitShaders()
 {
-    HRESULT hr;
+	HRESULT hr;
 
-    UINT Size = ARRAYSIZE(g_VS);
-    hr = m_Device->CreateVertexShader(g_VS, Size, nullptr, &m_VertexShader);
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to create vertex shader in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	UINT Size = ARRAYSIZE(g_VS);
+	hr = m_Device->CreateVertexShader(g_VS, Size, nullptr, &m_VertexShader);
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to create vertex shader in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-	
+
 	constexpr std::array<D3D11_INPUT_ELEMENT_DESC, 2> Layout =
-        {{
-            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        }};
-	
+	{ {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	} };
 
-    /*D3D11_INPUT_ELEMENT_DESC Layout[] =
-    {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
-    };*/
+
+	/*D3D11_INPUT_ELEMENT_DESC Layout[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};*/
 	//UINT NumElements = 2;// ARRAYSIZE(Layout);
-    hr = m_Device->CreateInputLayout(Layout.data(), Layout.size(), g_VS, Size, &m_InputLayout);
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to create input layout in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
-    m_DeviceContext->IASetInputLayout(m_InputLayout);
+	hr = m_Device->CreateInputLayout(Layout.data(), Layout.size(), g_VS, Size, &m_InputLayout);
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to create input layout in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
+	m_DeviceContext->IASetInputLayout(m_InputLayout);
 
-    Size = ARRAYSIZE(g_PS);
-    hr = m_Device->CreatePixelShader(g_PS, Size, nullptr, &m_PixelShader);
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to create pixel shader in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	Size = ARRAYSIZE(g_PS);
+	hr = m_Device->CreatePixelShader(g_PS, Size, nullptr, &m_PixelShader);
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to create pixel shader in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-    return DUPL_RETURN_SUCCESS;
+	return DUPL_RETURN_SUCCESS;
 }
 
 //
@@ -600,26 +561,26 @@ DUPL_RETURN OUTPUTMANAGER::InitShaders()
 //
 DUPL_RETURN OUTPUTMANAGER::MakeRTV()
 {
-    // Get backbuffer
-    ID3D11Texture2D* BackBuffer = nullptr;
-    HRESULT hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&BackBuffer));
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to get backbuffer for making render target view in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	// Get backbuffer
+	ID3D11Texture2D* BackBuffer = nullptr;
+	HRESULT hr = m_SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&BackBuffer));
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to get backbuffer for making render target view in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-    // Create a render target view
-    hr = m_Device->CreateRenderTargetView(BackBuffer, nullptr, &m_RTV);
-    BackBuffer->Release();
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to create render target view in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	// Create a render target view
+	hr = m_Device->CreateRenderTargetView(BackBuffer, nullptr, &m_RTV);
+	BackBuffer->Release();
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to create render target view in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-    // Set new render target
-    m_DeviceContext->OMSetRenderTargets(1, &m_RTV, nullptr);
+	// Set new render target
+	m_DeviceContext->OMSetRenderTargets(1, &m_RTV, nullptr);
 
-    return DUPL_RETURN_SUCCESS;
+	return DUPL_RETURN_SUCCESS;
 }
 
 //
@@ -627,14 +588,14 @@ DUPL_RETURN OUTPUTMANAGER::MakeRTV()
 //
 void OUTPUTMANAGER::SetViewPort(UINT Width, UINT Height)
 {
-    D3D11_VIEWPORT VP;
-    VP.Width = static_cast<FLOAT>(Width);
-    VP.Height = static_cast<FLOAT>(Height);
-    VP.MinDepth = 0.0f;
-    VP.MaxDepth = 1.0f;
-    VP.TopLeftX = 0;
-    VP.TopLeftY = 0;
-    m_DeviceContext->RSSetViewports(1, &VP);
+	D3D11_VIEWPORT VP;
+	VP.Width = static_cast<FLOAT>(Width);
+	VP.Height = static_cast<FLOAT>(Height);
+	VP.MinDepth = 0.0f;
+	VP.MaxDepth = 1.0f;
+	VP.TopLeftX = 0;
+	VP.TopLeftY = 0;
+	m_DeviceContext->RSSetViewports(1, &VP);
 }
 
 //
@@ -642,37 +603,37 @@ void OUTPUTMANAGER::SetViewPort(UINT Width, UINT Height)
 //
 DUPL_RETURN OUTPUTMANAGER::ResizeSwapChain()
 {
-    if (m_RTV)
-    {
-        m_RTV->Release();
-        m_RTV = nullptr;
-    }
+	if (m_RTV)
+	{
+		m_RTV->Release();
+		m_RTV = nullptr;
+	}
 
-    RECT WindowRect;
-    GetClientRect(m_WindowHandle, &WindowRect);
-    UINT Width = WindowRect.right - WindowRect.left;
-    UINT Height = WindowRect.bottom - WindowRect.top;
+	RECT WindowRect;
+	GetClientRect(m_WindowHandle, &WindowRect);
+	UINT Width = WindowRect.right - WindowRect.left;
+	UINT Height = WindowRect.bottom - WindowRect.top;
 
-    // Resize swapchain
-    DXGI_SWAP_CHAIN_DESC SwapChainDesc;
-    m_SwapChain->GetDesc(&SwapChainDesc);
-    HRESULT hr = m_SwapChain->ResizeBuffers(SwapChainDesc.BufferCount, Width, Height, SwapChainDesc.BufferDesc.Format, SwapChainDesc.Flags);
-    if (FAILED(hr))
-    {
-        return ProcessFailure(m_Device, L"Failed to resize swapchain buffers in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
-    }
+	// Resize swapchain
+	DXGI_SWAP_CHAIN_DESC SwapChainDesc;
+	m_SwapChain->GetDesc(&SwapChainDesc);
+	HRESULT hr = m_SwapChain->ResizeBuffers(SwapChainDesc.BufferCount, Width, Height, SwapChainDesc.BufferDesc.Format, SwapChainDesc.Flags);
+	if (FAILED(hr))
+	{
+		return ProcessFailure(m_Device, L"Failed to resize swapchain buffers in OUTPUTMANAGER", L"Error", hr, SystemTransitionsExpectedErrors);
+	}
 
-    // Make new render target view
-    DUPL_RETURN Ret = MakeRTV();
-    if (Ret != DUPL_RETURN_SUCCESS)
-    {
-        return Ret;
-    }
+	// Make new render target view
+	DUPL_RETURN Ret = MakeRTV();
+	if (Ret != DUPL_RETURN_SUCCESS)
+	{
+		return Ret;
+	}
 
-    // Set new viewport
-    SetViewPort(Width, Height);
+	// Set new viewport
+	SetViewPort(Width, Height);
 
-    return Ret;
+	return Ret;
 }
 
 //
@@ -680,77 +641,77 @@ DUPL_RETURN OUTPUTMANAGER::ResizeSwapChain()
 //
 void OUTPUTMANAGER::CleanRefs()
 {
-    if (m_VertexShader)
-    {
-        m_VertexShader->Release();
-        m_VertexShader = nullptr;
-    }
+	if (m_VertexShader)
+	{
+		m_VertexShader->Release();
+		m_VertexShader = nullptr;
+	}
 
-    if (m_PixelShader)
-    {
-        m_PixelShader->Release();
-        m_PixelShader = nullptr;
-    }
+	if (m_PixelShader)
+	{
+		m_PixelShader->Release();
+		m_PixelShader = nullptr;
+	}
 
-    if (m_InputLayout)
-    {
-        m_InputLayout->Release();
-        m_InputLayout = nullptr;
-    }
+	if (m_InputLayout)
+	{
+		m_InputLayout->Release();
+		m_InputLayout = nullptr;
+	}
 
-    if (m_RTV)
-    {
-        m_RTV->Release();
-        m_RTV = nullptr;
-    }
+	if (m_RTV)
+	{
+		m_RTV->Release();
+		m_RTV = nullptr;
+	}
 
-    if (m_SamplerLinear)
-    {
-        m_SamplerLinear->Release();
-        m_SamplerLinear = nullptr;
-    }
+	if (m_SamplerLinear)
+	{
+		m_SamplerLinear->Release();
+		m_SamplerLinear = nullptr;
+	}
 
-    if (m_BlendState)
-    {
-        m_BlendState->Release();
-        m_BlendState = nullptr;
-    }
+	if (m_BlendState)
+	{
+		m_BlendState->Release();
+		m_BlendState = nullptr;
+	}
 
-    if (m_DeviceContext)
-    {
-        m_DeviceContext->Release();
-        m_DeviceContext = nullptr;
-    }
+	if (m_DeviceContext)
+	{
+		m_DeviceContext->Release();
+		m_DeviceContext = nullptr;
+	}
 
-    if (m_Device)
-    {
-        m_Device->Release();
-        m_Device = nullptr;
-    }
+	if (m_Device)
+	{
+		m_Device->Release();
+		m_Device = nullptr;
+	}
 
-    if (m_SwapChain)
-    {
-        m_SwapChain->Release();
-        m_SwapChain = nullptr;
-    }
+	if (m_SwapChain)
+	{
+		m_SwapChain->Release();
+		m_SwapChain = nullptr;
+	}
 
 	if (m_luminanceView)
 	{
 		m_luminanceView->Release();
 		m_luminanceView = nullptr;
 	}
-	
+
 	if (m_chrominanceView)
 	{
 		m_chrominanceView->Release();
 		m_chrominanceView = nullptr;
 	}
 
-    if (m_SharedSurf)
-    {
-        m_SharedSurf->Release();
-        m_SharedSurf = nullptr;
-    }
+	if (m_SharedSurf)
+	{
+		m_SharedSurf->Release();
+		m_SharedSurf = nullptr;
+	}
 
 	if (m_AccessibleSurf)
 	{
@@ -758,16 +719,16 @@ void OUTPUTMANAGER::CleanRefs()
 		m_AccessibleSurf = nullptr;
 	}
 
-    if (m_Factory)
-    {
-        if (m_OcclusionCookie)
-        {
-            m_Factory->UnregisterOcclusionStatus(m_OcclusionCookie);
-            m_OcclusionCookie = 0;
-        }
-        m_Factory->Release();
-        m_Factory = nullptr;
-    }
+	if (m_Factory)
+	{
+		if (m_OcclusionCookie)
+		{
+			m_Factory->UnregisterOcclusionStatus(m_OcclusionCookie);
+			m_OcclusionCookie = 0;
+		}
+		m_Factory->Release();
+		m_Factory = nullptr;
+	}
 }
 
 
@@ -785,26 +746,26 @@ DUPL_RETURN ProcessFailure(_In_opt_ ID3D11Device* Device, _In_ LPCWSTR Str, _In_
 		{
 		case DXGI_ERROR_DEVICE_REMOVED:
 		case DXGI_ERROR_DEVICE_RESET:
-		case static_cast<HRESULT>(E_OUTOFMEMORY) :
-		{
-			// Our device has been stopped due to an external event on the GPU so map them all to
-			// device removed and continue processing the condition
-			TranslatedHr = DXGI_ERROR_DEVICE_REMOVED;
-			break;
-		}
+			case static_cast<HRESULT>(E_OUTOFMEMORY) :
+			{
+				// Our device has been stopped due to an external event on the GPU so map them all to
+				// device removed and continue processing the condition
+				TranslatedHr = DXGI_ERROR_DEVICE_REMOVED;
+				break;
+			}
 
-		case S_OK:
-		{
-			// Device is not removed so use original error
-			TranslatedHr = hr;
-			break;
-		}
+			case S_OK:
+			{
+				// Device is not removed so use original error
+				TranslatedHr = hr;
+				break;
+			}
 
-		default:
-		{
-			// Device is removed but not a error we want to remap
-			TranslatedHr = DeviceRemovedReason;
-		}
+			default:
+			{
+				// Device is removed but not a error we want to remap
+				TranslatedHr = DeviceRemovedReason;
+			}
 		}
 	}
 	else

@@ -12,8 +12,8 @@
 // Per-pixel color data passed through the pixel shader.
 struct PixelShaderInput
 {
-	min16float4 pos         : SV_POSITION;
-	min16float2 texCoord    : TEXCOORD0;
+	float4 pos         : SV_POSITION;
+	float2 texCoord    : TEXCOORD0;
 };
 
 Texture2D<float>  luminanceChannel   : t0;
@@ -41,10 +41,10 @@ float3 ConvertYUVtoRGB(float3 yuv)
 	return saturate(yuv);
 }
 
-min16float4 PS(PixelShaderInput input) : SV_TARGET
+float4 PS(PixelShaderInput input) : SV_TARGET
 {
 	float y = luminanceChannel.Sample(defaultSampler, input.texCoord);
 	float2 uv = chrominanceChannel.Sample(defaultSampler, input.texCoord);
 
-	return min16float4(ConvertYUVtoRGB(float3(y, uv)), 1.f);
+	return float4(ConvertYUVtoRGB(float3(y, uv)), 1.f);
 }
